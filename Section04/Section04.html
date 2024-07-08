@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Section04 - ログファイル作成</title>
+  </head>
+  <body>
+    <h1>Section04 - ログファイル作成</h1>
+    <button onclick="createLogFile()">ログファイルを作成</button>
+    <p id="result"></p>
+
+    <script>
+      function createLogFile() {
+        const logContent = `ログファイル作成時刻: ${new Date().toLocaleString(
+          "ja-JP"
+        )}`;
+        const blob = new Blob([logContent], { type: "text/plain" });
+
+        // FileSystemAccessAPIを使用してログファイルを作成
+        if ("showDirectoryPicker" in window) {
+          showDirectoryPicker()
+            .then(async (directoryHandle) => {
+              try {
+                const logFolderHandle =
+                  await directoryHandle.getDirectoryHandle("log", {
+                    create: true,
+                  });
+                const fileHandle = await logFolderHandle.getFileHandle(
+                  "execution_log.txt",
+                  { create: true }
+                );
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                document.getElementById("result").textContent =
+                  "ログファイルが作成されました。";
+              } catch (error) {
+                console.error("ログファイル作成エラー:", error);
+                document.getElementById("result").textContent =
+                  "ログファイルの作成に失敗しました。";
+              }
+            })
+            .catch((error) => {
+              console.error("ディレクトリ選択エラー:", error);
+              document.getElementById("result").textContent =
+                "ディレクトリの選択がキャンセルされました。";
+            });
+        } else {
+          // FileSystemAccessAPIがサポートされていない場合のフォールバック
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "execution_log.txt";
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          document.getElementById("result").textContent =
+            "ログファイルがダウンロードされました。手動でlogフォルダに移動してください。";
+        }
+      }
+    </script>
+  </body>
+</html>
